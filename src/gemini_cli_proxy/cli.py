@@ -11,7 +11,7 @@ import uvicorn
 @click.command()
 @click.option(
     "--host",
-    default="127.0.0.1",
+    default="0.0.0.0",
     help="Server host address"
 )
 @click.option(
@@ -19,6 +19,11 @@ import uvicorn
     default=8765,
     type=int,
     help="Server port"
+)
+@click.option(
+    "--gemini-path",
+    default="gemini",
+    help="Path to the Gemini CLI executable"
 )
 @click.option(
     "--rate-limit",
@@ -46,6 +51,7 @@ import uvicorn
 def main(
     host: str,
     port: int,
+    gemini_path: str,
     rate_limit: int,
     max_concurrency: int,
     timeout: float,
@@ -62,6 +68,7 @@ def main(
     
     config.host = host
     config.port = port
+    config.gemini_command = gemini_path
     config.log_level = "debug" if debug else "info"
     config.rate_limit = rate_limit
     config.max_concurrency = max_concurrency
@@ -86,4 +93,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main() 
+    main()

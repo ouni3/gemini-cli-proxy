@@ -58,6 +58,65 @@ uv run gemini-cli-proxy
 
 Gemini CLI Proxy listens on port `8765` by default. You can customize the startup port with the `--port` parameter.
 
+### 🐳 Deployment with Docker
+
+This project includes a `Dockerfile` and an entrypoint script to provide a seamless and automated deployment experience.
+
+**1. Build the Docker Image**
+
+First, build the Docker image from the project root:
+```bash
+docker build -t gemini-cli-proxy .
+```
+
+**2. Run the Container**
+
+There are two recommended methods for running the container, depending on your authentication preference.
+
+#### Method 1: API Key (Recommended for Automation)
+
+You can provide your Gemini API key as an environment variable. This is the most reliable method for automated deployments.
+
+```bash
+docker run --rm -p 8765:8765 \
+  -e GEMINI_API_KEY="YOUR_API_KEY" \
+  --name gemini-proxy \
+  gemini-cli-proxy
+```
+Replace `"YOUR_API_KEY"` with your actual Gemini API key.
+
+#### Method 2: Interactive Browser Login (One-Time Setup)
+
+If you prefer to use browser-based authentication, you can perform a one-time interactive login. The credentials will be stored in a persistent Docker volume.
+
+**Step 1: Start the container in interactive mode.**
+This command creates a named volume `gemini-config` to store your credentials.
+```bash
+docker run -it --rm -p 8765:8765 \
+  -v gemini-config:/root/.gemini \
+  --name gemini-proxy \
+  gemini-cli-proxy
+```
+
+**Step 2: Follow the on-screen instructions.**
+The first time you run this, the container will detect that no credentials exist and will start the interactive login process.
+- It will print a long URL to your console.
+- Copy this URL and paste it into your browser on your host machine.
+- Complete the Google login process.
+- You will be given an authorization code. Copy it.
+- Paste the authorization code back into the container's terminal when prompted.
+
+**Step 3: Restart the container for normal use.**
+Once you have successfully logged in, the credentials are saved in the `gemini-config` volume. You can now stop the container (with `Ctrl+C`) and restart it in detached mode for regular use.
+
+```bash
+docker run -d --rm -p 8765:8765 \
+  -v gemini-config:/root/.gemini \
+  --name gemini-proxy \
+  gemini-cli-proxy
+```
+On subsequent runs, the container will automatically find the credentials in the volume and start the proxy server directly.
+
 After startup, test the service with curl:
 
 ```bash
@@ -115,6 +174,7 @@ gemini-cli-proxy --help
 Available options:
 - `--host`: Server host address (default: 127.0.0.1)
 - `--port`: Server port (default: 8765)
+- `--gemini-path`: Path to the Gemini CLI executable (default: gemini)
 - `--rate-limit`: Max requests per minute (default: 60)
 - `--max-concurrency`: Max concurrent subprocesses (default: 4)
 - `--timeout`: Gemini CLI command timeout in seconds (default: 30.0)
@@ -142,4 +202,4 @@ MIT License
 
 ## 🤝 Contributing
 
-Issues and Pull Requests are welcome! 
+Issues and Pull Requests are welcome!
