@@ -78,7 +78,8 @@ There are two recommended methods for running the container, depending on your a
 You can provide your Gemini API key as an environment variable. This is the most reliable method for automated deployments.
 
 ```bash
-docker run --rm -p 8765:8765 \
+docker run -d -p 8765:8765 \
+  --restart always \
   -e GEMINI_API_KEY="YOUR_API_KEY" \
   --name gemini-proxy \
   gemini-cli-proxy
@@ -92,25 +93,29 @@ If you prefer to use browser-based authentication, you can perform a one-time in
 **Step 1: Start the container in interactive mode.**
 This command creates a named volume `gemini-config` to store your credentials.
 ```bash
-docker run -it --rm -p 8765:8765 \
+docker run -it -p 8765:8765 \
+  --restart always \
   -v gemini-config:/root/.gemini \
   --name gemini-proxy \
   gemini-cli-proxy
 ```
 
-**Step 2: Follow the on-screen instructions.**
-The first time you run this, the container will detect that no credentials exist and will start the interactive login process.
-- It will print a long URL to your console.
-- Copy this URL and paste it into your browser on your host machine.
+**Step 2: Follow the on-screen instructions for one-time setup.**
+The first time you run this command, the container needs your permission to access Google. This requires a one-time interactive setup:
+- The container will print a long URL to your console.
+- **On your main computer**, copy this URL and paste it into your browser.
 - Complete the Google login process.
-- You will be given an authorization code. Copy it.
-- Paste the authorization code back into the container's terminal when prompted.
+- Google will give you an authorization code. Copy this code.
+- Paste the code back into the container's terminal and press Enter.
 
-**Step 3: Restart the container for normal use.**
-Once you have successfully logged in, the credentials are saved in the `gemini-config` volume. You can now stop the container (with `Ctrl+C`) and restart it in detached mode for regular use.
+Once you provide the code, the proxy service will start automatically in the same terminal. Your credentials are now saved permanently in the `gemini-config` volume.
+
+**Step 3: Run the container in the background (Optional).**
+After the one-time setup is complete, you can stop the container (with `Ctrl+C`) and run it in detached (`-d`) mode for regular use. It will now start automatically every time.
 
 ```bash
-docker run -d --rm -p 8765:8765 \
+docker run -d -p 8765:8765 \
+  --restart always \
   -v gemini-config:/root/.gemini \
   --name gemini-proxy \
   gemini-cli-proxy
