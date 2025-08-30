@@ -111,6 +111,7 @@ async def list_models():
     return ModelsResponse(data=models)
 
 
+@app.post("/v1beta/models/{model_name:path}:streamGenerateContent")
 @app.post("/v1/v1beta/models/{model_name:path}:streamGenerateContent")
 @limiter.limit(f"{config.rate_limit}/minute")
 async def google_chat_completions_stream(
@@ -136,11 +137,25 @@ async def google_chat_completions_stream(
                 if role == "model":
                     role = "assistant"
                 
-                text_parts = [part.get("text", "") for part in content.get("parts", []) if "text" in part]
-                full_content = "".join(text_parts)
+                message_parts = []
+                for part in content.get("parts", []):
+                    if "text" in part:
+                        message_parts.append({"type": "text", "text": part["text"]})
+                    elif "inline_data" in part:
+                        inline_data = part["inline_data"]
+                        mime_type = inline_data.get("mime_type", "image/png")
+                        data = inline_data.get("data", "")
+                        if mime_type and data:
+                            data_url = f"data:{mime_type};base64,{data}"
+                            message_parts.append({"type": "image_url", "image_url": {"url": data_url}})
                 
-                if full_content:
-                    messages.append({"role": role, "content": full_content})
+                if not message_parts:
+                    continue
+
+                if len(message_parts) == 1 and message_parts[0]["type"] == "text":
+                    messages.append({"role": role, "content": message_parts[0]["text"]})
+                else:
+                    messages.append({"role": role, "content": message_parts})
 
         # Create OpenAI-compatible request
         chat_request_data = {

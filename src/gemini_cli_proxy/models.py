@@ -16,11 +16,17 @@ class ChatContentPart(BaseModel):
     text: Optional[str] = None
     image_url: Optional[Dict[str, str]] = None  # {"url": "..."}
 
+    def get(self, key, default=None):
+        return getattr(self, key, default)
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
 
 class ChatMessage(BaseModel):
     """Chat message model"""
     role: Literal["system", "user", "assistant"]
-    content: Union[str, List[ChatContentPart]]
+    content: Union[str, List[Union[ChatContentPart, Dict[str, Any]]]]
 
 
 class ChatCompletionRequest(BaseModel):
@@ -101,4 +107,4 @@ class HealthResponse(BaseModel):
     """Health check response model"""
     status: str = "ok"
     version: str
-    timestamp: int = Field(default_factory=lambda: int(time.time())) 
+    timestamp: int = Field(default_factory=lambda: int(time.time()))

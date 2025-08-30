@@ -4,6 +4,7 @@ OpenAI adapter module
 Handles format conversion and compatibility
 """
 
+import json
 import time
 import uuid
 import logging
@@ -127,7 +128,6 @@ class OpenAIAdapter:
                     ]
                 )
                 yield f"data: {final_response.model_dump_json()}\n\n"
-                yield "data: [DONE]\n\n"
                 
                 logger.info("Streaming chat completion request processed successfully")
                 
@@ -140,8 +140,7 @@ class OpenAIAdapter:
                         "type": "internal_error"
                     }
                 }
-                yield f"data: {error_response}\n\n"
-                yield "data: [DONE]\n\n"
+                yield f"data: {json.dumps(error_response)}\n\n"
         
         return StreamingResponse(
             generate_stream(),
@@ -156,4 +155,4 @@ class OpenAIAdapter:
 
 
 # Global adapter instance
-openai_adapter = OpenAIAdapter() 
+openai_adapter = OpenAIAdapter()

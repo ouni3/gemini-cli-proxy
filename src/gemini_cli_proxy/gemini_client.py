@@ -223,21 +223,26 @@ class GeminiClient:
         for i, message in enumerate(messages):
             if isinstance(message.content, str):
                 # Simple string content
-                if message.role == "system":
-                    prompt_parts.append(f"System: {message.content}")
-                elif message.role == "user":
-                    prompt_parts.append(f"User: {message.content}")
-                elif message.role == "assistant":
-                    prompt_parts.append(f"Assistant: {message.content}")
+                content = message.content.strip()
+                if content.startswith("<task>") and content.endswith("</task>"):
+                    content = content[len("<task>"):-len("</task>")].strip()
+
+                if content:
+                    if message.role == "system":
+                        prompt_parts.append(f"System: {content}")
+                    elif message.role == "user":
+                        prompt_parts.append(f"User: {content}")
+                    elif message.role == "assistant":
+                        prompt_parts.append(f"Assistant: {content}")
             else:
                 # List of content parts (vision support)
                 content_parts = []
                 
                 for j, part in enumerate(message.content):
-                    if part.type == "text" and part.text:
-                        content_parts.append(part.text)
-                    elif part.type == "image_url" and part.image_url:
-                        url = part.image_url.get("url", "")
+                    if part.get("type") == "text" and part.get("text"):
+                        content_parts.append(part.get("text"))
+                    elif part.get("type") == "image_url" and part.get("image_url"):
+                        url = part["image_url"].get("url", "")
                         if url.startswith("data:"):
                             # Process base64 image
                             temp_file_path = self._save_base64_image(url)
@@ -248,16 +253,20 @@ class GeminiClient:
                             # TODO: Download and save remote images if needed
                             content_parts.append(f"<image_url>{url}</image_url>")
                 
-                combined_content = " ".join(content_parts)
-                if message.role == "system":
-                    prompt_parts.append(f"System: {combined_content}")
-                elif message.role == "user":
-                    prompt_parts.append(f"User: {combined_content}")
-                elif message.role == "assistant":
-                    prompt_parts.append(f"Assistant: {combined_content}")
+                combined_content = " ".join(content_parts).strip()
+                if combined_content.startswith("<task>") and combined_content.endswith("</task>"):
+                    combined_content = combined_content[len("<task>"):-len("</task>")].strip()
+                
+                if combined_content:
+                    if message.role == "system":
+                        prompt_parts.append(f"System: {combined_content}")
+                    elif message.role == "user":
+                        prompt_parts.append(f"User: {combined_content}")
+                    elif message.role == "assistant":
+                        prompt_parts.append(f"Assistant: {combined_content}")
 
         final_prompt = "\n".join(prompt_parts)
-        logger.debug(f"Prompt sent to Gemini CLI: {final_prompt}")
+        logger.info(f"Final prompt being sent to Gemini CLI: {final_prompt}")
         
         return final_prompt, temp_files
     
@@ -331,4 +340,4 @@ class GeminiClient:
 
 
 # Global client instance
-gemini_client = GeminiClient() 
+gemini_client = GeminiClient()
